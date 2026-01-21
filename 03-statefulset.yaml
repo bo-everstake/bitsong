@@ -41,7 +41,7 @@ spec:
 
         - name: init-bitsong
           image: mycuriosity/bitsong 
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           workingDir: /data/.bitsongd
           securityContext:
             runAsNonRoot: true
