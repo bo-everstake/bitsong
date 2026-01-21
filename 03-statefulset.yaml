@@ -32,6 +32,7 @@ spec:
           args:
             - |
               set -eu
+              apk add --no-cache lz4  
               mkdir -p /data/.bitsongd
               chown -R 1000:1000 /data
               chmod -R g+rwX /data
