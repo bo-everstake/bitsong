@@ -32,8 +32,6 @@ spec:
           args:
             - |
               set -eu
-              apt-get update
-              apt-get install -y lz4
               mkdir -p /data/.bitsongd
               chown -R 1000:1000 /data
               chmod -R g+rwX /data
