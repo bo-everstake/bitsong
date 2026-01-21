@@ -57,7 +57,7 @@ spec:
             - name: MONIKER
               value: "bitsong-gke"
             - name: SNAPSHOT_URL
-              value: "https://snapshots.polkachu.com/snapshots/bitsong/bitsong_26212632.tar.lz4"
+              value: "https://snapshots.polkachu.com/snapshots/bitsong/	bitsong_26228249.tar.lz4"
           args:
             - |
               set -eu
