@@ -8,7 +8,6 @@ resources:
   - 03-statefulset.yaml
   - 04-service-lb.yaml
   - 05-service-headless.yaml
-  - https://github.com/stakater/Reloader/deployments/kubernetes?ref=v1.0.62
 
 configMapGenerator:
   - name: bitsong-config
@@ -17,11 +16,6 @@ configMapGenerator:
       - config/config.toml
       - config/client.toml
       - config/genesis.json
-      - config/node_key.json
-      - config/priv_validator_key.json
   - name: bitsong-init
     files:
       - scripts/init.sh
-
-generatorOptions:
-  disableNameSuffixHash: true
