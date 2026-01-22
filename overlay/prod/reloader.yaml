@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reloader
+  namespace: bitsong-fullnode
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reloader
+  template:
+    metadata:
+      labels:
+        app: reloader
+    spec:
+      containers:
+        - name: reloader
+          image: ghcr.io/stakater/reloader:v1.0.62
+          imagePullPolicy: IfNotPresent
+          args:
+            - --log-level=info
+            - --reload-on-config-change=true
+            - --reload-strategy=annotations
+          env:
+            - name: WATCH_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 10m
+              memory: 64Mi
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: reloader
+  namespace: bitsong-fullnode
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: reloader-role
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "namespaces"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "daemonsets", "statefulsets"]
+    verbs: ["get", "list", "watch", "update", "patch"]
+  - apiGroups: ["batch"]
+    resources: ["cronjobs"]
+    verbs: ["get", "list", "watch", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: reloader-role-binding
+subjects:
+  - kind: ServiceAccount
+    name: reloader
+    namespace: bitsong-fullnode
+roleRef:
+  kind: ClusterRole
+  name: reloader-role
+  apiGroup: rbac.authorization.k8s.io
+

@@ -13,6 +13,8 @@ spec:
     metadata:
       labels:
         app: bitsong
+      annotations:
+        reloader.stakater.com/match: "true"
     spec:
       terminationGracePeriodSeconds: 120
 
@@ -40,7 +42,7 @@ spec:
               mountPath: /data
 
         - name: init-bitsong
-          image: mycuriosity/bitsong 
+          image: mycuriosity/bitsong
           imagePullPolicy: Always
           workingDir: /data/.bitsongd
           securityContext:
@@ -49,6 +51,10 @@ spec:
             runAsGroup: 1000
             allowPrivilegeEscalation: false
           command: ["/bin/sh", "-lc"]
+          args:
+            - |
+              set -eu
+              sh /scripts/init.sh
           env:
             - name: HOME
               value: "/data"
@@ -56,12 +62,6 @@ spec:
               value: "bitsong-2b"
             - name: MONIKER
               value: "bitsong-gke"
-            - name: SNAPSHOT_URL
-              value: "https://snapshots.polkachu.com/snapshots/bitsong/bitsong_26228249.tar.lz4"
-          args:
-            - |
-              set -eu
-              sh /scripts/init.sh
           volumeMounts:
             - name: data
               mountPath: /data
@@ -72,58 +72,32 @@ spec:
         - name: bitsong
           image: mycuriosity/bitsong
           imagePullPolicy: IfNotPresent
-          workingDir: /data/.bitsongd
-          securityContext:
-            runAsNonRoot: true
-            runAsUser: 1000
-            runAsGroup: 1000
-            allowPrivilegeEscalation: false
-          command: ["bitsongd"]
-          args: ["start", "--home", "/data/.bitsongd"]
+          command:
+            - bitsongd
+          args:
+            - start
           ports:
-            - name: p2p
-              containerPort: 26656
-            - name: rpc
-              containerPort: 26657
-            - name: rest
-              containerPort: 1317
-            - name: prom
-              containerPort: 26660
-          resources:
-            requests:
-              cpu: "1"
-              memory: "2Gi"
-            limits:
-              cpu: "2"
-              memory: "4Gi"
-          startupProbe:
-            httpGet:
-              path: /status
-              port: 26657
-            failureThreshold: 60
-            periodSeconds: 10
-            timeoutSeconds: 2
-          readinessProbe:
-            httpGet:
-              path: /status
-              port: 26657
-            periodSeconds: 10
-            timeoutSeconds: 2
-            failureThreshold: 6
-          livenessProbe:
-            tcpSocket:
-              port: 26657
-            periodSeconds: 20
-            timeoutSeconds: 2
-            failureThreshold: 3
+            - containerPort: 26656
+              name: p2p
+            - containerPort: 26657
+              name: rpc
+            - containerPort: 9090
+              name: grpc
           volumeMounts:
             - name: data
-              mountPath: /data
+              mountPath: /data/.bitsongd
+            - name: config
+              mountPath: /data/.bitsongd/config
+              readOnly: true
 
       volumes:
         - name: init-scripts
           configMap:
             name: bitsong-init
+            defaultMode: 0755
+        - name: config
+          configMap:
+            name: bitsong-config
             defaultMode: 0444
 
   volumeClaimTemplates:
@@ -131,7 +105,7 @@ spec:
         name: data
       spec:
         accessModes: ["ReadWriteOnce"]
-        storageClassName: standard-rwo
         resources:
           requests:
-            storage: 10Gi
+            storage: 100Gi
+
