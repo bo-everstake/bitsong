@@ -3,6 +3,11 @@ kind: Kustomization
 
 resources:
   - ../../base
-  - ../patches/statefulset-reloader-label.yaml
   - reloader.yaml
+
+patches:
+  - path: statefulset-reloader-label.yaml
+    target:
+      kind: StatefulSet
+      name: bitsong
 
