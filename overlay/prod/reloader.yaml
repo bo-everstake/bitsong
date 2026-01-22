@@ -21,6 +21,7 @@ spec:
             - --log-level=info
             - --reload-on-config-change=true
             - --reload-strategy=annotations
+            - --resources-to-watch=secrets,configmaps
           env:
             - name: WATCH_NAMESPACE
               valueFrom:
@@ -46,7 +47,7 @@ metadata:
   name: reloader-role
 rules:
   - apiGroups: [""]
-    resources: ["pods", "namespaces"]
+    resources: ["pods", "namespaces", "secrets", "configmaps"]
     verbs: ["get", "list", "watch"]
   - apiGroups: ["apps"]
     resources: ["deployments", "daemonsets", "statefulsets"]

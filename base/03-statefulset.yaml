@@ -62,6 +62,11 @@ spec:
               value: "bitsong-2b"
             - name: MONIKER
               value: "bitsong-gke"
+            - name: POLKACHU_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: polkachu-secret
+                  key: POLKACHU_SECRET
           volumeMounts:
             - name: data
               mountPath: /data
@@ -107,5 +112,5 @@ spec:
         accessModes: ["ReadWriteOnce"]
         resources:
           requests:
-            storage: 100Gi
+            storage: 10Gi
 
