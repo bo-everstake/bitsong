@@ -1,39 +1,3 @@
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: reloader
-  namespace: bitsong-fullnode
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: reloader-role
-  namespace: bitsong-fullnode
-rules:
-  - apiGroups: [""]
-    resources: ["configmaps", "secrets"]
-    verbs: ["get", "list", "watch"]
-  - apiGroups: ["apps"]
-    resources: ["deployments", "daemonsets", "statefulsets"]
-    verbs: ["get", "list", "watch", "patch", "update"]
-  - apiGroups: ["batch"]
-    resources: ["cronjobs"]
-    verbs: ["get", "list", "watch", "patch", "update"]
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: reloader-rolebinding
-  namespace: bitsong-fullnode
-subjects:
-  - kind: ServiceAccount
-    name: reloader
-    namespace: bitsong-fullnode
-roleRef:
-  kind: Role
-  name: reloader-role
-  apiGroup: rbac.authorization.k8s.io
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -55,11 +19,13 @@ spec:
           image: ghcr.io/stakater/reloader:v1.0.62
           imagePullPolicy: IfNotPresent
           args:
-            - --log-level=info
-            - --reload-on-config-change=true
             - --reload-strategy=annotations
-            - --resources-to-watch=secrets,configmaps
-            - --watch-namespace=bitsong-fullnode
+            - --sync-after-restart
+          env:
+            - name: KUBERNETES_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
           resources:
             limits:
               cpu: 100m
@@ -67,3 +33,45 @@ spec:
             requests:
               cpu: 10m
               memory: 64Mi
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: reloader
+  namespace: bitsong-fullnode
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: reloader-role
+  namespace: bitsong-fullnode
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps", "secrets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "daemonsets", "statefulsets"]
+    verbs: ["get", "list", "watch", "patch", "update"]
+  - apiGroups: ["batch"]
+    resources: ["cronjobs"]
+    verbs: ["get", "list", "watch", "patch", "update"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: reloader-role-binding
+  namespace: bitsong-fullnode
+subjects:
+  - kind: ServiceAccount
+    name: reloader
+    namespace: bitsong-fullnode
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: reloader-role
