@@ -2,8 +2,6 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: bitsong
-spec:
-  template:
-    metadata:
-      annotations:
-        reloader.stakater.com/match: "true"
+  namespace: bitsong-fullnode
+  annotations:
+    reloader.stakater.com/auto: "true"

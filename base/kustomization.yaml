@@ -1,23 +1,24 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
+namespace: bitsong-fullnode
+
 resources:
   - 01-namespace.yaml
   - 03-statefulset.yaml
   - 04-service-lb.yaml
   - 05-service-headless.yaml
 
+generatorOptions:
+  disableNameSuffixHash: true
+
 configMapGenerator:
   - name: bitsong-config
     files:
       - config/app.toml
-      - config/config.toml
       - config/client.toml
-    options:
-      disableNameSuffixHash: false
+      - config/config.toml
 
   - name: bitsong-init
     files:
-      - scripts/init.sh
-    options:
-      disableNameSuffixHash: false
+      - init.sh=scripts/init.sh

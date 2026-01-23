@@ -8,15 +8,15 @@ spec:
   selector:
     app: bitsong
   ports:
-    - name: rest
-      port: 1317
-      targetPort: rest
-    - name: rpc
-      port: 26657
-      targetPort: rpc
-    - name: prom
-      port: 26660
-      targetPort: prom
     - name: p2p
       port: 26656
-      targetPort: p2p
+      targetPort: 26656
+    - name: rpc
+      port: 26657
+      targetPort: 26657
+    - name: rest
+      port: 1317
+      targetPort: 1317
+    - name: prom
+      port: 26660
+      targetPort: 26660

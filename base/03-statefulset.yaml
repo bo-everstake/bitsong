@@ -6,31 +6,21 @@ metadata:
 spec:
   serviceName: bitsong-headless
   replicas: 1
-
   selector:
     matchLabels:
       app: bitsong
-
   template:
     metadata:
       labels:
         app: bitsong
-      annotations:
-        reloader.stakater.com/match: "true"
-
     spec:
       terminationGracePeriodSeconds: 120
 
       securityContext:
         fsGroup: 1000
-        fsGroupChangePolicy: OnRootMismatch
+        fsGroupChangePolicy: "OnRootMismatch"
 
-      ############################################################
-      # INIT CONTAINERS
-      ############################################################
       initContainers:
-
-        # 1) Fix permissions on PVC
         - name: fix-permissions
           image: busybox:1.36
           imagePullPolicy: IfNotPresent
@@ -49,7 +39,6 @@ spec:
             - name: data
               mountPath: /data
 
-        # 2) Bitsong init (home / genesis / peers / snapshot)
         - name: init-bitsong
           image: mycuriosity/bitsong
           imagePullPolicy: IfNotPresent
@@ -61,27 +50,46 @@ spec:
             allowPrivilegeEscalation: false
           command: ["/bin/sh", "-lc"]
           args:
-            - /scripts/init.sh
+            - |
+              set -eu
+              /scripts/init.sh
           env:
+            - name: HOME_DIR
+              value: "/data"
+            - name: DAEMON_HOME
+              value: "/data/.bitsongd"
+            - name: REPO_CONFIG_DIR
+              value: "/repo-config"
             - name: CHAIN_ID
               value: "bitsong-2b"
             - name: MONIKER
               value: "bitsong-gke"
+
+            # Genesis download (large => not in ConfigMap)
+            - name: GENESIS_URL
+              value: "https://raw.githubusercontent.com/bitsongofficial/networks/master/bitsong-2b/genesis.json"
+
+            # Polkachu snapshot API
             - name: POLKACHU_SECRET
               valueFrom:
                 secretKeyRef:
                   name: polkachu-secret
                   key: POLKACHU_SECRET
+            - name: SNAPSHOT_API
+              value: "https://polkachu.com/api/v2/chain_snapshots/bitsong/mainnet"
+            - name: SNAPSHOT_BASE_URL
+              value: "https://snapshots.polkachu.com/snapshots/bitsong"
+
           volumeMounts:
             - name: data
               mountPath: /data
             - name: init-scripts
               mountPath: /scripts
               readOnly: true
+            - name: repo-config
+              mountPath: /repo-config
+              readOnly: true
 
-      ############################################################
-      # MAIN CONTAINER
-      ############################################################
       containers:
         - name: bitsong
           image: mycuriosity/bitsong
@@ -110,24 +118,21 @@ spec:
             - name: data
               mountPath: /data
 
-      ############################################################
-      # VOLUMES
-      ############################################################
       volumes:
         - name: init-scripts
           configMap:
             name: bitsong-init
             defaultMode: 0755
+        - name: repo-config
+          configMap:
+            name: bitsong-config
+            defaultMode: 0444
 
-  ############################################################
-  # PVC TEMPLATE
-  ############################################################
   volumeClaimTemplates:
     - metadata:
         name: data
       spec:
-        accessModes:
-          - ReadWriteOnce
+        accessModes: ["ReadWriteOnce"]
         storageClassName: standard-rwo
         resources:
           requests:

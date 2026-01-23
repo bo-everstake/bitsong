@@ -3,3 +3,7 @@ kind: Kustomization
 
 resources:
   - ../../base
+  - reloader.yaml
+
+patchesStrategicMerge:
+  - statefulset-reloader-label.yaml
