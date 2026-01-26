@@ -3,6 +3,8 @@ kind: StatefulSet
 metadata:
   name: bitsong
   namespace: bitsong-fullnode
+  annotations: 
+    reloader.stakater.com/auto: "true"
 spec:
   serviceName: bitsong-headless
   replicas: 1
