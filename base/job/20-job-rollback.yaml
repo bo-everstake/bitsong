@@ -4,7 +4,7 @@ metadata:
   name: rollback
 spec:
   backoffLimit: 0
-  ttlSecondsAfterFinished: 3600
+  ttlSecondsAfterFinished: 400 ## job will be removed after 6 minutes 40 seconds
   template:
     spec:
       restartPolicy: Never
