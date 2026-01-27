@@ -9,9 +9,11 @@ spec:
   template:
     spec:
       restartPolicy: Never
+
       securityContext:
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
+
       containers:
         - name: resync
           image: mycuriosity/bitsong
@@ -44,9 +46,8 @@ spec:
                 echo "No existing priv_validator_state.json found"
               fi
 
-              echo "[2/7] Fetch snapshot filename"
+              echo "[2/7] Fetch snapshot metadata"
               SNAPSHOT_API="${SNAPSHOT_API:?SNAPSHOT_API is required}"
-              SNAPSHOT_BASE_URL="${SNAPSHOT_BASE_URL:?SNAPSHOT_BASE_URL is required}"
               POLKACHU_SECRET="${POLKACHU_SECRET:-}"
 
               if [ -n "${POLKACHU_SECRET}" ]; then
@@ -55,14 +56,13 @@ spec:
                 META="$(curl -sS "${SNAPSHOT_API}")"
               fi
 
-              FILE="$(echo "${META}" | jq -r '.snapshot.filename // empty')"
-              if [ -z "${FILE}" ] || [ "${FILE}" = "null" ]; then
-                echo "ERROR: cannot get snapshot filename from API response"
-                echo "${META}" | head -c 2000 || true
+              URL="$(echo "${META}" | jq -r '.snapshot.url // empty')"
+              if [ -z "${URL}" ] || [ "${URL}" = "null" ]; then
+                echo "ERROR: cannot get snapshot url from API response"
+                echo "${META}"
                 exit 1
               fi
 
-              URL="${SNAPSHOT_BASE_URL}/${FILE}"
               echo "Snapshot URL: ${URL}"
 
               echo "[3/7] Download snapshot"
@@ -81,11 +81,11 @@ spec:
 
               if [ ! -d "${DATA_DIR}" ]; then
                 echo "ERROR: data directory not found after extract: ${DATA_DIR}"
-                find "${DAEMON_HOME}" -maxdepth 3 -type d | head -n 200
+                find "${DAEMON_HOME}" -maxdepth 3 -type d
                 exit 1
               fi
 
-              echo "[5/7] Restore priv_validator_state.json (prefer old one)"
+              echo "[5/7] Restore priv_validator_state.json"
               if [ -f "${PV_BAK}" ]; then
                 cp -f "${PV_BAK}" "${DATA_DIR}/priv_validator_state.json"
                 echo "Restored priv_validator_state.json from previous data"
@@ -99,19 +99,20 @@ spec:
               chmod -R g+rwX /data
 
               echo "[7/7] DONE"
+
           env:
             - name: SNAPSHOT_API
               value: "https://polkachu.com/api/v2/chain_snapshots/bitsong/mainnet"
-            - name: SNAPSHOT_BASE_URL
-              value: "https://snapshots.polkachu.com/snapshots/bitsong"
             - name: POLKACHU_SECRET
               valueFrom:
                 secretKeyRef:
                   name: polkachu-secret
                   key: POLKACHU_SECRET
+
           volumeMounts:
             - name: data
               mountPath: /data
+
       volumes:
         - name: data
           persistentVolumeClaim:
