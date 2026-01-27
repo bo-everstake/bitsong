@@ -9,11 +9,9 @@ spec:
   template:
     spec:
       restartPolicy: Never
-
       securityContext:
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
-
       containers:
         - name: resync
           image: mycuriosity/bitsong
@@ -29,17 +27,16 @@ spec:
 
               DAEMON_HOME="/data/.bitsongd"
               DATA_DIR="${DAEMON_HOME}/data"
-              ROLLBACK_DIR="${DAEMON_HOME}/data.rollback"
               PV_BAK="/tmp/priv_validator_state.json.bak"
 
               mkdir -p "${DAEMON_HOME}"
 
-              echo "[0/8] Check required tools"
+              echo "[0/7] Check required tools"
               for t in curl jq lz4 tar; do
                 command -v "$t" >/dev/null 2>&1 || { echo "ERROR: missing tool: $t"; exit 1; }
               done
 
-              echo "[1/8] Save current priv_validator_state.json (from existing data)"
+              echo "[1/7] Backup current priv_validator_state.json (if exists)"
               if [ -f "${DATA_DIR}/priv_validator_state.json" ]; then
                 cp -f "${DATA_DIR}/priv_validator_state.json" "${PV_BAK}"
                 echo "Saved: ${PV_BAK}"
@@ -47,13 +44,7 @@ spec:
                 echo "No existing priv_validator_state.json found"
               fi
 
-              echo "[2/8] Move current data -> data.rollback"
-              if [ -d "${DATA_DIR}" ]; then
-                rm -rf "${ROLLBACK_DIR}"
-                mv "${DATA_DIR}" "${ROLLBACK_DIR}"
-              fi
-
-              echo "[3/8] Fetch snapshot metadata"
+              echo "[2/7] Fetch snapshot filename"
               SNAPSHOT_API="${SNAPSHOT_API:?SNAPSHOT_API is required}"
               SNAPSHOT_BASE_URL="${SNAPSHOT_BASE_URL:?SNAPSHOT_BASE_URL is required}"
               POLKACHU_SECRET="${POLKACHU_SECRET:-}"
@@ -74,10 +65,10 @@ spec:
               URL="${SNAPSHOT_BASE_URL}/${FILE}"
               echo "Snapshot URL: ${URL}"
 
-              echo "[4/8] Download snapshot"
+              echo "[3/7] Download snapshot"
               curl -fLsS --retry 3 --retry-all-errors -o /tmp/snapshot.tar.lz4 "${URL}"
 
-              echo "[5/8] Extract snapshot (full replace data)"
+              echo "[4/7] Replace data with snapshot (wipe + extract)"
               rm -rf "${DATA_DIR}"
               mkdir -p "${DAEMON_HOME}"
               lz4 -dc /tmp/snapshot.tar.lz4 | tar -xf - -C "${DAEMON_HOME}"
@@ -94,23 +85,20 @@ spec:
                 exit 1
               fi
 
-              echo "[6/8] Restore priv_validator_state.json (prefer old one)"
+              echo "[5/7] Restore priv_validator_state.json (prefer old one)"
               if [ -f "${PV_BAK}" ]; then
                 cp -f "${PV_BAK}" "${DATA_DIR}/priv_validator_state.json"
                 echo "Restored priv_validator_state.json from previous data"
               else
-                cat > "${DATA_DIR}/priv_validator_state.json" <<'EOF'
-{"height":"0","round":0,"step":0}
-EOF
+                printf '%s\n' '{"height":"0","round":0,"step":0}' > "${DATA_DIR}/priv_validator_state.json"
                 echo "Created default priv_validator_state.json"
               fi
 
-              echo "[7/8] Fix permissions"
+              echo "[6/7] Fix permissions"
               chown -R 1000:1000 /data
               chmod -R g+rwX /data
 
-              echo "[8/8] DONE"
-
+              echo "[7/7] DONE"
           env:
             - name: SNAPSHOT_API
               value: "https://polkachu.com/api/v2/chain_snapshots/bitsong/mainnet"
@@ -121,11 +109,9 @@ EOF
                 secretKeyRef:
                   name: polkachu-secret
                   key: POLKACHU_SECRET
-
           volumeMounts:
             - name: data
               mountPath: /data
-
       volumes:
         - name: data
           persistentVolumeClaim:
