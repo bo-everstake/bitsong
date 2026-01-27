@@ -8,9 +8,20 @@ resources:
   - 03-statefulset.yaml
   - 04-service-lb.yaml
   - 05-service-headless.yaml
+  #- job  
 
 generatorOptions:
   disableNameSuffixHash: true
+
+replicas:
+  - name: bitsong
+    count: 1
+
+images:
+  - name: mycuriosity/bitsong
+    newTag: latest
+  - name: busybox
+    newTag: "1.36"
 
 configMapGenerator:
   - name: bitsong-config

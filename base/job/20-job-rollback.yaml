@@ -1,0 +1,42 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: rollback
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      restartPolicy: Never
+
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+
+      containers:
+        - name: rollback
+          image: mycuriosity/bitsong
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+          command: ["/bin/sh", "-lc"]
+          args:
+            - |
+              set -eu
+              HOME_DIR="/data/.bitsongd"
+
+              echo "Running: bitsongd rollback --home ${HOME_DIR}"
+              bitsongd rollback --home "${HOME_DIR}"
+
+              echo "DONE"
+          volumeMounts:
+            - name: data
+              mountPath: /data
+
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: data-bitsong-0
