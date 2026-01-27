@@ -1,10 +1,11 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: rollback
+  name: bitsong-rollback
 spec:
   backoffLimit: 0
-  ttlSecondsAfterFinished: 400 ## job will be removed after 6 minutes 40 seconds
+  ttlSecondsAfterFinished: 400
+
   template:
     spec:
       restartPolicy: Never
@@ -13,25 +14,53 @@ spec:
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
 
+      initContainers:
+        - name: fix-permissions
+          image: busybox:1.36
+          securityContext:
+            runAsUser: 0
+          command: ["/bin/sh", "-lc"]
+          args:
+            - |
+              echo "Fixing permissions on /data"
+              mkdir -p /data/.bitsongd
+              chown -R 1000:1000 /data
+              chmod -R u+rwX,g+rwX /data
+              ls -ld /data /data/.bitsongd
+          volumeMounts:
+            - name: data
+              mountPath: /data
+
       containers:
         - name: rollback
           image: mycuriosity/bitsong
           imagePullPolicy: IfNotPresent
+          workingDir: /data
           securityContext:
             runAsNonRoot: true
             runAsUser: 1000
             runAsGroup: 1000
             allowPrivilegeEscalation: false
+
           command: ["/bin/sh", "-lc"]
           args:
             - |
               set -eu
+
               HOME_DIR="/data/.bitsongd"
+
+              echo "User info:"
+              id
+              echo "Working dir:"
+              pwd
+              echo "Listing /data:"
+              ls -la /data
 
               echo "Running: bitsongd rollback --home ${HOME_DIR}"
               bitsongd rollback --home "${HOME_DIR}"
 
               echo "DONE"
+
           volumeMounts:
             - name: data
               mountPath: /data
