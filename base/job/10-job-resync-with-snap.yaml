@@ -5,11 +5,11 @@ metadata:
   namespace: bitsong-fullnode
 spec:
   backoffLimit: 0
-  ttlSecondsAfterFinished: 3600
+  ttlSecondsAfterFinished: 300 # job will be removed after 5 minutes
   template:
     spec:
       restartPolicy: Never
-
+      
       securityContext:
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
