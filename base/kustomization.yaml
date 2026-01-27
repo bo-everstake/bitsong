@@ -5,7 +5,7 @@ namespace: bitsong-fullnode
 
 replicas:
   - name: bitsong
-    count: 1
+    count: 0
 
 images:
   - name: mycuriosity/bitsong
