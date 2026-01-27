@@ -2,15 +2,18 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: resync-with-snap
+  namespace: bitsong-fullnode
 spec:
   backoffLimit: 0
   ttlSecondsAfterFinished: 3600
   template:
     spec:
       restartPolicy: Never
+
       securityContext:
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
+
       containers:
         - name: resync
           image: mycuriosity/bitsong
@@ -107,6 +110,7 @@ EOF
               chmod -R g+rwX /data
 
               echo "[8/8] DONE"
+
           env:
             - name: SNAPSHOT_API
               value: "https://polkachu.com/api/v2/chain_snapshots/bitsong/mainnet"
@@ -117,9 +121,11 @@ EOF
                 secretKeyRef:
                   name: polkachu-secret
                   key: POLKACHU_SECRET
+
           volumeMounts:
             - name: data
               mountPath: /data
+
       volumes:
         - name: data
           persistentVolumeClaim:
