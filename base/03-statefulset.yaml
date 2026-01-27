@@ -7,7 +7,7 @@ metadata:
     reloader.stakater.com/auto: "true"
 spec:
   serviceName: bitsong-headless
-  #replicas: 1
+  replicas: 1
   selector:
     matchLabels:
       app: bitsong
@@ -94,7 +94,7 @@ spec:
 
       containers:
         - name: bitsong
-          ##\image: mycuriosity/bitsong
+          image: mycuriosity/bitsong
           imagePullPolicy: IfNotPresent
           workingDir: /data/.bitsongd
           securityContext:
