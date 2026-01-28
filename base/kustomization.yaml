@@ -18,7 +18,8 @@ resources:
   - 03-statefulset.yaml
   - 04-service-lb.yaml
   - 05-service-headless.yaml
-  #- job
+  #  - job/10-job-resync-with-snap.yaml
+  #  - job/20-job-rollback.yaml
 
 generatorOptions:
   disableNameSuffixHash: true
