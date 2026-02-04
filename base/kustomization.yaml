@@ -5,7 +5,7 @@ namespace: bitsong-fullnode
 
 replicas:
   - name: bitsong
-    count: 1
+    count: 0
 
 images:
   - name: mycuriosity/bitsong
@@ -19,7 +19,7 @@ resources:
   - 04-service-lb.yaml
   - 05-service-headless.yaml
   #  - job/10-job-resync-with-snap.yaml
-  #  - job/20-job-rollback.yaml
+  - job/20-job-rollback.yaml
 
 generatorOptions:
   disableNameSuffixHash: true
